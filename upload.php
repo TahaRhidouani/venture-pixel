@@ -1,36 +1,34 @@
 <?php
-$index_data = file_get_contents('data/'.key($_FILES).'/info.json');
-$index = json_decode($index_data, true);
+require __DIR__ . '/lib/common.php';
+start_session();
+require_admin();
 
-for($i = 0; $i < count($_FILES[key($_FILES)]['name']); $i++){
-    if(isset($_FILES[key($_FILES)]['name'][$i]) && $_FILES[key($_FILES)]['name'][$i] != ''){
+// The admin page posts the pictures under the booking id as the field name.
+$accessid = require_booking(key($_FILES));
+$files = $_FILES[$accessid];
+if (!is_array($files['name'])) {
+    echo json_encode("error");
+    exit;
+}
 
-        $previewfilePath = "data/".key($_FILES)."/preview/".$i.".jpg"; 
-        $filePath = "data/".key($_FILES)."/pictures/".$i.".jpg"; 
-        $fileType = end(explode(".", $_FILES[key($_FILES)]["name"][$i]));
+@mkdir(data_path($accessid.'/preview'), 0770, true);
+@mkdir(data_path($accessid.'/pictures'), 0770, true);
 
-        $allowTypes = array('jpg','png','jpeg'); 
+for($i = 0; $i < count($files['name']); $i++){
+    if($files['error'][$i] === UPLOAD_ERR_OK && is_uploaded_file($files['tmp_name'][$i])){
 
-        
-        if(in_array($fileType, $allowTypes)){ 
-            if(copy($_FILES[key($_FILES)]["tmp_name"][$i], $previewfilePath)){ 
-                copy($_FILES[key($_FILES)]['tmp_name'][$i], $filePath);
+        $previewfilePath = data_path($accessid."/preview/".$i.".jpg");
+        $filePath = data_path($accessid."/pictures/".$i.".jpg");
+        $imageType = @getimagesize($files['tmp_name'][$i])[2] ?? null;
 
-                $watermarkImg = imagecreatefrompng("assets/icons/logo.png"); 
+        if($imageType === IMAGETYPE_JPEG || $imageType === IMAGETYPE_PNG){
+            if(copy($files["tmp_name"][$i], $previewfilePath)){
+                copy($files['tmp_name'][$i], $filePath);
 
-                switch($fileType){ 
-                    case 'jpg': 
-                        $im = imagecreatefromjpeg($previewfilePath); 
-                        break; 
-                    case 'jpeg': 
-                        $im = imagecreatefromjpeg($previewfilePath); 
-                        break; 
-                    case 'png': 
-                        $im = imagecreatefrompng($previewfilePath); 
-                        break; 
-                    default: 
-                        $im = imagecreatefromjpeg($previewfilePath); 
-                } 
+                $im = $imageType === IMAGETYPE_PNG ? imagecreatefrompng($previewfilePath) : imagecreatefromjpeg($previewfilePath);
+                if ($im === false) {
+                    continue;
+                }
 
 
                 $font = dirname(__FILE__).'/assets/CircularStd.ttf';
@@ -78,10 +76,9 @@ for($i = 0; $i < count($_FILES[key($_FILES)]['name']); $i++){
 //     }
 // }
 
-$index_data = file_get_contents('data/'.key($_FILES).'/info.json');
-$index = json_decode($index_data, true);
-$index["Current_pictures"] = count($_FILES[key($_FILES)]['name']);
-file_put_contents('data/'.key($_FILES).'/info.json', json_encode($index));
+$index = read_json($accessid.'/info.json');
+$index["Current_pictures"] = count($files['name']);
+write_json($accessid.'/info.json', $index);
 
 echo json_encode($index);
 

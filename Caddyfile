@@ -1,0 +1,25 @@
+{
+	auto_https off
+	admin off
+	frankenphp {
+		num_threads 2
+	}
+}
+
+{$SERVER_NAME::8080} {
+	root * /app/public
+	header X-Content-Type-Options nosniff
+
+	@hidden path_regexp (?i)^/(\.|.*/\.|lib(/|$)|README|Dockerfile|Caddyfile|php\.ini$|password$|stripe-key$|square$)
+	@missing not file
+
+	route {
+		respond /healthz 200
+		respond @hidden 404
+		rewrite / /home.html
+		# Booking files live in DATA_DIR and are served by data.php after an access check.
+		rewrite /data/* /data.php?path={path}
+		respond @missing 404
+		php_server
+	}
+}

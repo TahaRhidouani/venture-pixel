@@ -120,12 +120,13 @@
                 data: { "status": "submit", "accessid": accessid },
                 success: function (result) {
                     if (result == "admin") {
-                        localStorage.setItem('accessid', accessid);
+                        localStorage.setItem('accessid', 'admin');
                         window.location.href = 'admin.html';
                     } else if (result == "true") {
                         localStorage.setItem('accessid', accessid);
                         window.location.href = 'view.html';
                     } else if (result == "false") {
+                        localStorage.removeItem('accessid');
                         $("#error_msg").attr("data-language", "error_invalid_access_code")
                         $("#error_msg").html(dictionary.error_invalid_access_code);
                     } else if (result == "logout") {

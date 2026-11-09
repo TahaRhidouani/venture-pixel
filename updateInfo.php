@@ -1,63 +1,47 @@
 <?php
-    $status = $_POST["status"];
+    require __DIR__ . '/lib/common.php';
+    start_session();
+
+    $status = $_POST["status"] ?? null;
+    $accessid = require_booking($_POST["accessid"] ?? null);
 
     if ($status == "update_payment_option") {
-        $option = $_POST["option"];
-        $accessid = $_POST["accessid"];
+        $option = $_POST["option"] ?? "";
 
-        $index_data = file_get_contents('data/'.$accessid.'/info.json');
-        $index = json_decode($index_data, true);
-        $index["payment_type"] = $option;
-        file_put_contents('data/'.$accessid.'/info.json', json_encode($index));
+        $index = read_json($accessid.'/info.json');
+        $index["payment_type"] = is_string($option) ? $option : "";
+        write_json($accessid.'/info.json', $index);
     } else if ($status == "update_cart") {
         $cart = $_POST["cart"] ?? [];
-        $accessid = $_POST["accessid"];
 
-        $index_data = file_get_contents('data/'.$accessid.'/info.json');
-        $index = json_decode($index_data, true);
+        $index = read_json($accessid.'/info.json');
         $index["cart"] = json_encode($cart);
-        file_put_contents('data/'.$accessid.'/info.json', json_encode($index));
+        write_json($accessid.'/info.json', $index);
 
-        echo $cart;
+        echo $index["cart"];
     } else if ($status == "get_cart") {
-        $accessid = $_POST["accessid"];
+        $index = read_json($accessid.'/info.json');
 
-        $index_data = file_get_contents('data/'.$accessid.'/info.json');
-        $index = json_decode($index_data, true);
+        echo json_encode($index["cart"] ?? "[]");
+    } else if ($status == 'no_editing' || $status == 'etransfer_editing') {
+        $index = read_json($accessid.'/info.json');
 
-        echo json_encode($index["cart"]);
-    } else if ($status == "update_cart") {
-        $cart = $_POST["cart"] ?? [];
-        $accessid = $_POST["accessid"];
+        // Both choices are offered only once the preview pictures are ready (status 4).
+        if (($index["Status"] ?? null) != 4) {
+            deny();
+        }
 
-        $index_data = file_get_contents('data/'.$accessid.'/info.json');
-        $index = json_decode($index_data, true);
-        $index["cart"] = json_encode($cart);
-        file_put_contents('data/'.$accessid.'/info.json', json_encode($index));
+        if ($status == 'no_editing') {
+            $bookings = read_json('bookings.json');
+            $bookings[$accessid]["Status"] = 6;
+            write_json('bookings.json', $bookings);
 
-        echo $cart;
-    } else if (isSet($_POST['status']) && $_POST['status'] == 'no_editing') {
-        $accessid = filter_var($_POST['accessid'], FILTER_SANITIZE_STRING);
-        
-        $index_data = file_get_contents('data/bookings.json');
-        $index = json_decode($index_data, true);
-        $index[$accessid]["Status"] = 6;
-        file_put_contents('data/bookings.json', json_encode($index));
-        
-        $index_data = file_get_contents('data/'.$accessid.'/info.json');
-        $index = json_decode($index_data, true);
-        $index["Status"] = 6;
-        $index["Photo_editing"] = "false";
-        file_put_contents('data/'.$accessid.'/info.json', json_encode($index));
-
-        echo "success";
-    } else if (isSet($_POST['status']) && $_POST['status'] == 'etransfer_editing') {
-        $accessid = filter_var($_POST['accessid'], FILTER_SANITIZE_STRING);
-        
-        $index_data = file_get_contents('data/'.$accessid.'/info.json');
-        $index = json_decode($index_data, true);
-        $index["Photo_editing"] = "true";
-        file_put_contents('data/'.$accessid.'/info.json', json_encode($index));
+            $index["Status"] = 6;
+            $index["Photo_editing"] = "false";
+        } else {
+            $index["Photo_editing"] = "true";
+        }
+        write_json($accessid.'/info.json', $index);
 
         echo "success";
     }

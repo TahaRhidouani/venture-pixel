@@ -1,4 +1,6 @@
 <?php
+require __DIR__ . '/lib/common.php';
+
 if(isSet($_POST['status']) && $_POST['status'] == 'submit'){
     $name=filter_var($_POST['name'], FILTER_SANITIZE_STRING);
     $email=filter_var($_POST['email'], FILTER_SANITIZE_STRING);
@@ -8,11 +10,15 @@ if(isSet($_POST['status']) && $_POST['status'] == 'submit'){
     $time=filter_var($_POST['time'], FILTER_SANITIZE_STRING);
     $event=filter_var($_POST['event'], FILTER_SANITIZE_STRING);
     $comment=filter_var($_POST['comment'], FILTER_SANITIZE_STRING);
-    $language=filter_var($_POST['language'], FILTER_SANITIZE_STRING);
-    $plan=filter_var($_POST['plan'], FILTER_SANITIZE_STRING);
-    $photoEditing=$_POST['photo_editing'];
+    $language=in_array($_POST['language'] ?? null, LANGUAGES, true) ? $_POST['language'] : 'en';
+    $plan=min(max((int) ($_POST['plan'] ?? 0), 0), 2);
+    $photoEditing=($_POST['photo_editing'] ?? '') === 'true' ? 'true' : 'false';
 
-    
+    if (!valid_email($email)) {
+        echo "error";
+        exit;
+    }
+
     $language_data = json_decode(file_get_contents('texts/'.$language.'.json'), true);
     $pictures = $plan == 0 ? 15 : ($plan == 1 ? 20 : 35);
     $total = $language_data["photography_prices"]["packages"][$plan];
@@ -21,27 +27,22 @@ if(isSet($_POST['status']) && $_POST['status'] == 'submit'){
     $subject = 'New booking';
     $message = "<Strong>Name:</Strong> ".$name."<br><Strong>Contact email:</Strong> ".$email."<br><Strong>Phone number:</Strong> ".$phone."<br><br><Strong>Location:</Strong> ".$location."<br><Strong>Date:</Strong> ".$date."<br><Strong>Time:</Strong> ".$time."<br><Strong>Pricing:</Strong> ".$total."<br><Strong>Edited:</Strong> ".($photoEditing == "true" ? "Yes" : "No")."<br><br><Strong>Other comments:</Strong><br>".$comment;
 
-    mail('email@email.com', $subject, $message);
+    if (valid_email(getenv('ADMIN_EMAIL'))) {
+        mail(getenv('ADMIN_EMAIL'), $subject, $message);
+    }
 
-    
-    do {
-        $accessid = uniqid();
-    } while (file_exists('data/'.$accessid));
+    $accessid = new_access_id();
 
-    mkdir('data/'.$accessid, 0777, true);
-    mkdir('data/'.$accessid.'/pictures/', 0777, true);
-    mkdir('data/'.$accessid.'/preview/', 0777, true);
+    mkdir(data_path($accessid.'/pictures'), 0770, true);
+    mkdir(data_path($accessid.'/preview'), 0770, true);
 
     $info = array("accessid" => $accessid, "Name" => $name, "Email" => $email, "Phone" => $phone, "Total" => $total, "Pictures" => $pictures, "Current_pictures" => 0, "Photo_editing" => $photoEditing, "Language" => $language, "Message" => $customMessage, "Event" => $event, "Location" => $location, "Date" => $date, "Time" => $time, "Comment" => $comment, "Status" => 1, "payment_type" => "", "cart" => "[]");
 
-    $info_data = fopen('data/'.$accessid.'/info.json', 'w');
-    fwrite($info_data, json_encode($info, JSON_FORCE_OBJECT));
-    fclose($info_data);
+    write_json($accessid.'/info.json', $info, JSON_FORCE_OBJECT);
 
-    $index_data = file_get_contents('data/bookings.json');
-    $index = json_decode($index_data, true);
+    $index = read_json('bookings.json');
     $index[$accessid] = array("Name" => $name, "Status" => 1);
-    file_put_contents('data/bookings.json', json_encode($index));
+    write_json('bookings.json', $index);
 
     $text_data = json_decode(file_get_contents('texts/'.$language.'.json'), true);
 

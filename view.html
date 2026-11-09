@@ -377,21 +377,6 @@
         var information, cart;
         var accessid = localStorage.getItem('accessid');
 
-        $.ajax({
-            type: "POST",
-            url: "updateInfo.php",
-            dataType: "json",
-            cache: false,
-            async: false,
-            data: {
-                status: "get_cart",
-                accessid: accessid,
-            },
-            success: function (result) {
-                cart = JSON.parse(result);
-            }
-        });
-
         $(document).ready(function () {
 
             $.ajax({
@@ -406,6 +391,21 @@
                     } else if (result == "false" || result == "logout") {
                         window.location.href = 'login.html';
                     } else if (result == "true") {
+                        $.ajax({
+                            type: "POST",
+                            url: "updateInfo.php",
+                            dataType: "json",
+                            cache: false,
+                            async: false,
+                            data: {
+                                status: "get_cart",
+                                accessid: accessid,
+                            },
+                            success: function (result) {
+                                cart = JSON.parse(result);
+                            }
+                        });
+
                         $.ajax({
                             url: "data/" + accessid + "/info.json",
                             async: false,
