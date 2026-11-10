@@ -110,8 +110,8 @@ header,
 .gallery_image {
   height: 40vmax;
   width: 100%;
-  background-size: cover;
-  background-position: 50% 50%;
+  object-fit: cover;
+  object-position: 50% 50%;
   margin: 15px 0;
 }
 

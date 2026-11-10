@@ -22,6 +22,7 @@
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(10, 25%);
+  grid-template-rows: 100%;
   margin: 0 -15%;
 }
 
@@ -58,8 +59,8 @@
 .gallery_image {
   height: 100%;
   width: 100%;
-  background-size: cover;
-  background-position: 50% 50%;
+  object-fit: cover;
+  object-position: 50% 50%;
 }
 
 #gallery_other {
@@ -72,6 +73,7 @@
 
 .gallery_other_img {
   width: 100%;
+  height: auto;
   border-radius: 5px;
 }
 
