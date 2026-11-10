@@ -301,7 +301,6 @@
   background-size: cover;
   background-position: 50% 50%;
   margin: 0 10px;
-  background-image: url(../assets/pictures/printing/printing.png);
   mask-image: linear-gradient(to right, black 25%, transparent);
   -webkit-mask-image: linear-gradient(to right, black 25%, transparent);
 }

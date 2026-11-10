@@ -3,3 +3,4 @@ square
 stripe-key
 /data/
 .DS_Store
+.env
